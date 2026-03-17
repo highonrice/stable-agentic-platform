@@ -1,0 +1,31 @@
+{
+  "name": "agentic-platform",
+  "private": true,
+  "workspaces": [
+    "packages/local-mcp",
+    "packages/foundation-mcp",
+    "packages/services/article",
+    "packages/services/llm",
+    "packages/services/chain-rpc"
+  ],
+  "scripts": {
+    "local-mcp": "npm run start --workspace=packages/local-mcp",
+    "foundation-mcp": "npm run start --workspace=packages/foundation-mcp",
+    "service:article": "npm run start --workspace=packages/services/article",
+    "service:llm": "npm run start --workspace=packages/services/llm",
+    "service:chain-rpc": "npm run start --workspace=packages/services/chain-rpc",
+    "services": "concurrently \"npm run service:article\" \"npm run service:llm\" \"npm run service:chain-rpc\"",
+    "dev": "concurrently \"npm run foundation-mcp\" \"npm run services\""
+  },
+  "devDependencies": {
+    "@tetherto/wdk-wallet-evm": "^1.0.0-beta.8",
+    "@types/node": "^20.0.0",
+    "@x402/evm": "^2.7.0",
+    "@x402/fetch": "^2.7.0",
+    "bip39": "^3.1.0",
+    "concurrently": "^9.1.2",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.0",
+    "viem": "^2.47.4"
+  }
+}

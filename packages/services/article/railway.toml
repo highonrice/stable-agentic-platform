@@ -1,7 +1,7 @@
 [build]
 builder = "nixpacks"
-buildCommand = "cd ../../.. && npm install"
+buildCommand = "npm install"
 
 [deploy]
-startCommand = "node ../../../node_modules/.bin/tsx src/index.ts"
+startCommand = "node node_modules/.bin/tsx packages/services/article/src/index.ts"
 restartPolicyType = "on_failure"

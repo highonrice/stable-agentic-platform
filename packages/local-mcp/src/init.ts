@@ -1,15 +1,14 @@
 /**
  * One-time wallet initialization.
- * Generates a BIP-39 mnemonic, saves it to ~/.stable-mcp/wallet.json,
+ * Generates a private key, saves it to ~/.stable-mcp/wallet.json,
  * and prints the wallet address + USDT0 balance.
  *
  * Run: npm run init --workspace=packages/local-mcp
  */
 
 import { config } from "dotenv";
-import WalletManagerEvm from "@tetherto/wdk-wallet-evm";
 import { createPublicClient, http, erc20Abi, defineChain } from "viem";
-import { generateMnemonic } from "bip39";
+import { privateKeyToAccount, generatePrivateKey } from "viem/accounts";
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
 import { join } from "path";
 import { homedir } from "os";
@@ -31,27 +30,27 @@ const stableChain = defineChain({
 const publicClient = createPublicClient({ chain: stableChain, transport: http() });
 
 async function main() {
-  let mnemonic: string;
+  let privateKey: `0x${string}`;
   let isNew = false;
 
-  if (process.env.MNEMONIC) {
-    mnemonic = process.env.MNEMONIC;
-    console.log("Using mnemonic from MNEMONIC env var.");
+  if (process.env.PRIVATE_KEY) {
+    privateKey = process.env.PRIVATE_KEY as `0x${string}`;
+    console.log("Using private key from PRIVATE_KEY env var.");
   } else if (existsSync(WALLET_FILE)) {
     const data = JSON.parse(readFileSync(WALLET_FILE, "utf-8"));
-    mnemonic = data.mnemonic;
+    privateKey = data.privateKey;
     console.log(`Loaded existing wallet from ${WALLET_FILE}`);
   } else {
-    mnemonic = generateMnemonic();
+    privateKey = generatePrivateKey();
     isNew = true;
   }
 
-  const account = await new WalletManagerEvm(mnemonic, { provider: STABLE_RPC }).getAccount();
-  const address = account.address as `0x${string}`;
+  const account = privateKeyToAccount(privateKey);
+  const address = account.address;
 
   if (isNew) {
     mkdirSync(WALLET_DIR, { recursive: true });
-    writeFileSync(WALLET_FILE, JSON.stringify({ mnemonic }, null, 2), { mode: 0o600 });
+    writeFileSync(WALLET_FILE, JSON.stringify({ privateKey }, null, 2), { mode: 0o600 });
     console.log(`\nNew wallet created and saved to ${WALLET_FILE}`);
   }
 
@@ -74,10 +73,10 @@ async function main() {
   }
 
   if (isNew) {
-    console.log(`\n⚠  BACK UP YOUR MNEMONIC before sending funds:`);
-    console.log(`   ${mnemonic}`);
+    console.log(`\n⚠  BACK UP YOUR PRIVATE KEY before sending funds:`);
+    console.log(`   ${privateKey}`);
     console.log(`\nTo use this wallet, either:`);
-    console.log(`  1. Set MNEMONIC="${mnemonic}" in packages/local-mcp/.env`);
+    console.log(`  1. Set PRIVATE_KEY="${privateKey}" in packages/local-mcp/.env`);
     console.log(`  2. Leave blank — the server reads from ${WALLET_FILE} automatically`);
   }
 }

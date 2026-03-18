@@ -6,11 +6,10 @@ import {
   ListToolsRequestSchema,
   type Tool,
 } from "@modelcontextprotocol/sdk/types.js";
-import WalletManagerEvm from "@tetherto/wdk-wallet-evm";
 import { x402Client, wrapFetchWithPayment } from "@x402/fetch";
 import { registerExactEvmScheme } from "@x402/evm/exact/client";
 import { createPublicClient, http, erc20Abi, defineChain } from "viem";
-import { generateMnemonic } from "bip39";
+import { privateKeyToAccount, generatePrivateKey } from "viem/accounts";
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
 import { join } from "path";
 import { homedir } from "os";
@@ -38,28 +37,27 @@ const publicClient = createPublicClient({ chain: stableChain, transport: http() 
 
 // ── Wallet setup ──────────────────────────────────────────────────────────────
 
-function loadOrCreateMnemonic(): string {
-  if (process.env.MNEMONIC) return process.env.MNEMONIC;
+function loadOrCreatePrivateKey(): `0x${string}` {
+  if (process.env.PRIVATE_KEY) return process.env.PRIVATE_KEY as `0x${string}`;
 
   if (existsSync(WALLET_FILE)) {
     const data = JSON.parse(readFileSync(WALLET_FILE, "utf-8"));
-    return data.mnemonic;
+    return data.privateKey;
   }
 
-  const mnemonic = generateMnemonic();
+  const privateKey = generatePrivateKey();
   mkdirSync(join(homedir(), ".stable-mcp"), { recursive: true });
-  writeFileSync(WALLET_FILE, JSON.stringify({ mnemonic }, null, 2), { mode: 0o600 });
+  writeFileSync(WALLET_FILE, JSON.stringify({ privateKey }, null, 2), { mode: 0o600 });
 
-  // Write to stderr so it doesn't corrupt MCP stdio
   process.stderr.write(`\n[stable-mcp] New wallet created — saved to ${WALLET_FILE}\n`);
-  process.stderr.write(`[stable-mcp] BACK UP YOUR MNEMONIC before sending funds.\n\n`);
+  process.stderr.write(`[stable-mcp] BACK UP YOUR PRIVATE KEY before sending funds.\n\n`);
 
-  return mnemonic;
+  return privateKey;
 }
 
-async function initWallet() {
-  const mnemonic = loadOrCreateMnemonic();
-  const account = await new WalletManagerEvm(mnemonic, { provider: STABLE_RPC }).getAccount();
+function initWallet() {
+  const privateKey = loadOrCreatePrivateKey();
+  const account = privateKeyToAccount(privateKey);
 
   const client = new x402Client();
   registerExactEvmScheme(client, { signer: account });
@@ -253,7 +251,7 @@ const TOOLS: Tool[] = [
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 async function main() {
-  const { account, fetchWithPayment } = await initWallet();
+  const { account, fetchWithPayment } = initWallet();
   const walletAddress = account.address as `0x${string}`;
 
   process.stderr.write(`[stable-mcp] Wallet: ${walletAddress}\n`);

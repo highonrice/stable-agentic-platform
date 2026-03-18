@@ -11,10 +11,8 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
-    "@tetherto/wdk-wallet-evm": "latest",
     "@x402/evm": "latest",
     "@x402/fetch": "latest",
-    "bip39": "^3.1.0",
     "dotenv": "^16.4.7",
     "viem": "^2.39.0"
   },
